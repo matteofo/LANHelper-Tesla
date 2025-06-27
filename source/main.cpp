@@ -240,7 +240,7 @@ public:
         nifmExit();
         setcalExit();
         setExit();
-    }  // Callet at the end to clean up all services previously initialized
+    }  // Called at the end to clean up all services previously initialized
 
     virtual void onShow() override {}    // Called before overlay wants to change from invisible to visible state
     virtual void onHide() override {}    // Called before overlay wants to change from visible to invisible state
