@@ -2,11 +2,14 @@
 
 #include <iostream>
 #include <cstdint>
+#include <string.h>
 
 #include <switch.h>
 
 #include <sstream>
 #include <format>
+
+#define MAX_PROFILES 256
 
 namespace ipglobal {
     typedef uint32_t ip_addr;
@@ -20,8 +23,11 @@ namespace ipglobal {
     } mac_addr;
 
     mac_addr getMacAddress();
+    ip_addr getIPAddress();
 
     std::string getIPString(ip_addr addr);
     std::string getMacString(mac_addr addr);
     std::string getPartialMacString(mac_addr addr);
+
+    Result cleanup();
 }

@@ -38,7 +38,7 @@ include $(DEVKITPRO)/libnx/switch_rules
 #   NACP building is skipped as well.
 #---------------------------------------------------------------------------------
 APP_TITLE	:=	LAN Helper
-APP_VERSION :=	1.1.0
+APP_VERSION :=	1.2.0
 
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
@@ -47,6 +47,8 @@ DATA		:=	data
 INCLUDES	:=	include libs/libtesla/include
 
 NO_ICON		:=  1
+
+DEFINES		:= -DAPP_VERSION=\"$(APP_VERSION)\"
 
 #---------------------------------------------------------------------------------
 # options for code generation

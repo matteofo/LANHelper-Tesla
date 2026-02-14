@@ -21,6 +21,24 @@ ipglobal::mac_addr ipglobal::getMacAddress() {
     return mac_out;
 }
 
+ipglobal::ip_addr ipglobal::getIPAddress() {
+    ipglobal::ip_addr address;
+    nifmGetCurrentIpAddress(&address);
+
+    // swap endianness
+    ipglobal::ip_addr swapped = address;
+    
+    u8* optr = (u8*) &address;
+    u8* sptr = (u8*) &swapped;
+    
+    sptr[0] = optr[3];
+    sptr[1] = optr[2];
+    sptr[2] = optr[1];
+    sptr[3] = optr[0];
+
+    return swapped;
+}
+
 std::string ipglobal::getIPString(ipglobal::ip_addr addr) {
     std::string out;
 
@@ -46,4 +64,31 @@ std::string ipglobal::getMacString(ipglobal::mac_addr addr) {
 
 std::string ipglobal::getPartialMacString(ipglobal::mac_addr addr) {
     return std::format("{:02x}:{:02x}", (uint8_t)addr.p5, (uint8_t)addr.p6);
+}
+
+Result ipglobal::cleanup() {
+    SetSysNetworkSettings settings[MAX_PROFILES];
+    s32 total = 0;
+
+    Result get = setsysGetNetworkSettings(&total, settings, MAX_PROFILES);
+    if (R_FAILED(get)) {
+        return get;
+    }
+
+    SetSysNetworkSettings filtered[total];
+    s32 filteredTotal = 0;
+
+    for (int i = 0; i < total; i++) {
+        if (settings[i].access_point_ssid_len > 0 && !settings[i].wired_flag) {
+            memcpy(&(filtered[filteredTotal]), &(settings[i]), sizeof(SetSysNetworkSettings));
+            filteredTotal++;
+        }
+    }
+
+    Result set = setsysSetNetworkSettings(filtered, filteredTotal);
+    if (R_FAILED(set)) {
+        return set;
+    }
+
+    return 0;
 }
