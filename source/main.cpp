@@ -8,7 +8,7 @@
 #include <lanhelper.h>
 
 #define TITLE "LAN Helper"
-#define CLEANUP_LABEL   "Warning! This operation will remove\nall wired and \"ghost\" (unnamed)\nnetwork connections.\n\n" \
+#define CLEANUP_LABEL   "This operation will remove\nall wired and \"ghost\" (unnamed)\nnetwork connections.\n\n" \
                         "If there are any network settings\nyou'd like to save, please\ndo so now!\n\n" \
                         "To apply the changes,\nyou'll have to restart your Switch."
 #define CLEANUP_DONE_LABEL  "Done. Would you like to reboot\nyour Switch now? (changes won't\nbe applied until you do.)"
@@ -17,6 +17,13 @@ Result genRes = 0;
 
 class MainGui;
 tsl::Overlay* ovlHandle;
+
+class Spacer {
+public:
+    static tsl::elm::CustomDrawer* make() {
+        return new tsl::elm::CustomDrawer([](tsl::gfx::Renderer *renderer, s32 x, s32 y, s32 w, s32 h) {});
+    }
+};
 
 class CleanupDoneGui : public tsl::Gui {
 public:
@@ -31,7 +38,7 @@ public:
 
         Result res = ipglobal::cleanup();
         if (R_FAILED(res)) {
-            std::string message = std::format("Failed to clean up\nnetwork interfaces! (error code 0x{:x})", R_VALUE(res));
+            std::string message = std::format("Failed to clean up\nnetwork interfaces! (error code 0x{:x})", R_DESCRIPTION(res));
         
             auto* drawer = new tsl::elm::CustomDrawer([message](tsl::gfx::Renderer *renderer, s32 x, s32 y, s32 w, s32 h) {
                 renderer->drawString(message.c_str(), false, x, y + 20, 20, renderer->a(0xffff));
@@ -50,7 +57,7 @@ public:
         auto yesButton = new tsl::elm::ListItem("Reboot now");
         yesButton->setClickListener([](u64 keys) {
             if (keys & HidNpadButton_A) {
-                appletRequestToReboot();
+                spsmShutdown(true);
                 return true;
             }
 
@@ -90,7 +97,8 @@ public:
         // Text layout from:
         // https://github.com/averne/Fizeau/blob/master/overlay/src/gui.cpp
         auto* drawer = new tsl::elm::CustomDrawer([](tsl::gfx::Renderer *renderer, s32 x, s32 y, s32 w, s32 h) {
-            renderer->drawString(CLEANUP_LABEL, false, x, y + 20, 20, renderer->a(0xffff));
+            renderer->drawString("Warning!", false, x, y + 24, 30, renderer->a(0xffff));
+            renderer->drawString(CLEANUP_LABEL, false, x, y + 60, 20, renderer->a(0xffff));
         });
 
         auto button = new tsl::elm::ListItem("Continue");
@@ -104,7 +112,7 @@ public:
         });
 
 
-        list->addItem(drawer, 220);
+        list->addItem(drawer, 270);
         list->addItem(button);
 
         frame->setContent(list);
@@ -154,11 +162,11 @@ public:
         // Text layout from:
         // https://github.com/averne/Fizeau/blob/master/overlay/src/gui.cpp
         auto* drawer = new tsl::elm::CustomDrawer([titleLabel, ip_str](tsl::gfx::Renderer *renderer, s32 x, s32 y, s32 w, s32 h) {
-            renderer->drawString(titleLabel.c_str(), false, x, y + 20, 26, renderer->a(0xffff));
-            renderer->drawString(ip_str, false, x, y + 48, 20, renderer->a(0xffff));
+            renderer->drawString(titleLabel.c_str(), false, x, y + 20, 24, renderer->a(0xffff));
+            renderer->drawString(ip_str, false, x, y + 48, 26, renderer->a(0xffff));
         });
 
-        list->addItem(drawer, 60);
+        list->addItem(drawer, 70);
 
         auto* doneButton = new tsl::elm::ListItem("Apply!");
         doneButton->setClickListener([ip_int, list, frame](u64 keys) {
@@ -210,11 +218,11 @@ public:
         // Text layout from:
         // https://github.com/averne/Fizeau/blob/master/overlay/src/gui.cpp
         auto* drawer = new tsl::elm::CustomDrawer([titleLabel, ipstr](tsl::gfx::Renderer *renderer, s32 x, s32 y, s32 w, s32 h) {
-            renderer->drawString(titleLabel.c_str(), false, x, y + 20, 26, renderer->a(0xffff));
-            renderer->drawString(ipstr.c_str(), false, x, y + 48, 20, renderer->a(0xffff));
+            renderer->drawString(titleLabel.c_str(), false, x, y + 20, 24, renderer->a(0xffff));
+            renderer->drawString(ipstr.c_str(), false, x, y + 48, 26, renderer->a(0xffff));
         });
 
-        list->addItem(drawer, 60);
+        list->addItem(drawer, 70);
 
         auto* doneButton = new tsl::elm::ListItem("Apply!");
         doneButton->setClickListener([hwaddr, list, frame](u64 keys) {
@@ -315,6 +323,7 @@ public:
         list->addItem(generateButton);
         list->addItem(generateXLinkButton);
         list->addItem(resetButton);
+        list->addItem(Spacer::make(), 190);
         list->addItem(cleanupButton);
 
         // Add the list to the frame for it to be drawn
@@ -343,12 +352,14 @@ public:
         setInitialize();
         setsysInitialize();
         setcalInitialize();
+        spsmInitialize();
     }  // Called at the start to initialize all services necessary for this Overlay
     virtual void exitServices() override {
         nifmExit();
         setsysExit();
         setcalExit();
         setExit();
+        spsmExit();
     }  // Called at the end to clean up all services previously initialized
 
     virtual void onShow() override {}    // Called before overlay wants to change from invisible to visible state
